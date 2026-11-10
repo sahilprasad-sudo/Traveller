@@ -17,11 +17,30 @@
       "version": {
         "up-to-next-major-version": "13.1.1",
       },
+    }, {
+      "kind": "remote",
+      "repository": "https://github.com/google/GoogleSignIn-iOS",
+      "version": {
+        "up-to-next-major-version": "10.1.0",
+      },
     },
   ],
   "files": [
-    { "kind": "folder", "path": "Traveller", "target-membership": [ "Traveller" ] },
     {
+      "kind": "folder",
+      "path": "Traveller",
+      "target-membership": [
+        "Traveller",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "Traveller",
+          "exclusions": [
+            "Info.plist",
+          ],
+        },
+      ],
+    }, {
       "kind": "group",
       "name": "Products",
       "children": [
@@ -42,6 +61,14 @@
       ],
       "package-product-members": [
         {
+          "package": "GoogleSignIn-iOS",
+          "product-name": "GoogleSignIn",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "GoogleSignIn-iOS",
+          "product-name": "GoogleSignInSwift",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
           "package": "firebase-ios-sdk",
           "product-name": "FirebaseAnalytics",
           "build-phase": { "build-phase": "frameworks" },
@@ -71,6 +98,7 @@
         "ENABLE_PREVIEWS": "YES",
         "ENABLE_USER_SELECTED_FILES": "readonly",
         "GENERATE_INFOPLIST_FILE": "YES",
+        "INFOPLIST_FILE": "Traveller/Info.plist",
         "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.travel",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]": "YES",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]": "YES",
