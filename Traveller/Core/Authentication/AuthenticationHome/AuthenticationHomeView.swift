@@ -9,9 +9,10 @@ import SwiftUI
 
 struct AuthenticationHomeView: View {
     // MARK: - View State
-    @State private var email: String = ""
-    @State private var password: String = ""
+//    @State private var email: String = ""
+//    @State private var password: String = ""
     @State private var isPasswordVisible: Bool = false
+    @StateObject private var viewModel = AuthenticationHomeModel()
     
     @FocusState private var focusedField: Field?
     
@@ -92,7 +93,7 @@ extension AuthenticationHomeView {
                     .foregroundStyle(focusedField == .email ? Color.accentColor : .secondary)
                     .frame(width: 20)
                 
-                TextField("Email Address", text: $email)
+                TextField("Email Address", text: $viewModel.email)
                     .keyboardType(.emailAddress)
                     .textContentType(.emailAddress)
                     .textInputAutocapitalization(.never)
@@ -120,10 +121,10 @@ extension AuthenticationHomeView {
                     
                     Group {
                         if isPasswordVisible {
-                            TextField("Password", text: $password)
+                            TextField("Password", text: $viewModel.password)
                                 .textContentType(.password)
                         } else {
-                            SecureField("Password", text: $password)
+                            SecureField("Password", text: $viewModel.password)
                                 .textContentType(.password)
                         }
                     }
@@ -152,7 +153,12 @@ extension AuthenticationHomeView {
                 
                 // You can also swap this Button for a NavigationLink if you have a ForgotPasswordView
                 Button {
-                    // Handle Forgot Password
+                    Task{
+                        do{
+                            await viewModel.resetPassword()
+                        }
+                    }
+                    
                 } label: {
                     Text("Forgot Password?")
                         .font(.footnote.weight(.semibold))
@@ -165,7 +171,11 @@ extension AuthenticationHomeView {
     private var signInButton: some View {
         Button {
             focusedField = nil
-            // Handle Sign In Action
+            Task{
+                
+                    await viewModel.signIn()
+                
+            }
         } label: {
             Text("Sign In")
                 .font(.headline)
@@ -176,8 +186,8 @@ extension AuthenticationHomeView {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .shadow(color: Color.accentColor.opacity(0.25), radius: 8, x: 0, y: 4)
         }
-        .disabled(email.isEmpty || password.isEmpty)
-        .opacity(email.isEmpty || password.isEmpty ? 0.6 : 1.0)
+        .disabled(viewModel.email.isEmpty || viewModel.password.isEmpty)
+        .opacity(viewModel.email.isEmpty || viewModel.password.isEmpty ? 0.6 : 1.0)
     }
     
     private var dividerSection: some View {
@@ -199,7 +209,11 @@ extension AuthenticationHomeView {
     private var googleSignInButton: some View {
         Button {
             focusedField = nil
-            // Handle Google Sign-In Action
+            Task{
+                do{
+                    await viewModel.signInWithGoogle()
+                }
+            }
         } label: {
             HStack(spacing: 12) {
                 Text("G")

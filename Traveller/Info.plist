@@ -11,7 +11,11 @@
 			<array>
 				<string>com.googleusercontent.apps.373647005826-vbsv9cr24977bmqooot5ddb5kobthgod</string>
 			</array>
+			<key>GIDClientID</key>
+			<string>373647005826-vbsv9cr24977bmqooot5ddb5kobthgod.apps.googleusercontent.com</string>
 		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>373647005826-vbsv9cr24977bmqooot5ddb5kobthgod.apps.googleusercontent.com</string>
 </dict>
 </plist>

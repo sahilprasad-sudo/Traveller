@@ -9,6 +9,8 @@ import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 import Combine
+import GoogleSignIn
+import FirebaseCore
 
 class AuthService{
     
@@ -80,4 +82,46 @@ class AuthService{
             self.userSession = nil
             self.currentUser = nil
         }
+    @MainActor
+    func resetPassword(email:String)async throws{
+        do{
+            try await Auth.auth().sendPasswordReset(withEmail: email)
+        }
+        catch{
+            print("Error encountered while resetting password!: \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
+    func googleSignIn()async throws{
+        guard let topVC = GoogleSignInUtil.shared.topViewController() else{
+            throw URLError(.cannotFindHost)
+        }
+        
+        let GIDSignInResult = try await GIDSignIn.sharedInstance.signIn(withPresenting: topVC)
+         
+        guard let idToken:String = GIDSignInResult.user.idToken?.tokenString else{
+            throw URLError(.badServerResponse)
+        }
+        let accessToken:String = GIDSignInResult.user.accessToken.tokenString
+        
+        let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: accessToken)
+        
+        let authResult = try await Auth.auth().signIn(with: credential)
+        self.userSession = authResult.user
+        
+        let userDoc = try await Firestore.firestore().collection("users").document(authResult.user.uid).getDocument()
+        
+        if !userDoc.exists{
+            let email = authResult.user.email ?? ""
+            let name = authResult.user.displayName ?? ""
+            let username = email.components(separatedBy: "@").first ?? name.lowercased().replacingOccurrences(of: " ", with: "")
+            try await uploadUserData(uid: authResult.user.uid, email: email, username: username, name: name)
+            
+        }
+        else{
+            try await loadUserData()
+        }
+        
+    }
 }
