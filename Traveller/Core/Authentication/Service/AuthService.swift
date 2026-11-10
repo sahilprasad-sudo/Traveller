@@ -92,7 +92,7 @@ class AuthService{
             throw error
         }
     }
-    
+    @MainActor
     func googleSignIn()async throws{
         guard let topVC = GoogleSignInUtil.shared.topViewController() else{
             throw URLError(.cannotFindHost)
