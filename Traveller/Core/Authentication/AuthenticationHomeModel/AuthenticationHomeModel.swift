@@ -15,15 +15,6 @@ class AuthenticationHomeModel:ObservableObject{
     @Published var email=""
     @Published var password = ""
     
-    func resetPassword()async{
-        do{
-            try await AuthService.shared.resetPassword(email: email)
-        }
-        catch{
-            print("Error encountered while resetting password-\(error.localizedDescription)")
-        }
-        
-    }
     func signInWithGoogle()async{
         do{
             try await AuthService.shared.googleSignIn()
@@ -41,4 +32,6 @@ class AuthenticationHomeModel:ObservableObject{
             print("Error Encountered while trying to sign In")
         }
     }
+    
+    
 }

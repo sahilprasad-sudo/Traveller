@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
     @StateObject var viewModel = RootViewModel()
@@ -17,9 +18,12 @@ struct RootView: View {
                     .environmentObject(registrationModel)
             }
             else if viewModel.currentUser != nil{
-                HomeView()
+                TripVaultView()
+                    .preferredColorScheme(.dark)
             }
+                
         }
+        .modelContainer(for: [Trip.self, ItineraryStop.self, Expense.self])
     }
 }
 

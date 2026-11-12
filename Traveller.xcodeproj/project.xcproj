@@ -90,6 +90,10 @@
           "package": "firebase-ios-sdk",
           "product-name": "FirebaseFirestore",
           "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "firebase-ios-sdk",
+          "product-name": "FirebaseStorage",
+          "build-phase": { "build-phase": "frameworks" },
         },
       ],
       "build-settings": {

@@ -17,6 +17,7 @@ class RegistrationViewModel:ObservableObject{
     @Published var username = ""
     @Published var email = ""
     @Published var password = ""
+    @Published var errorMessage:String?
     
     @MainActor
     func createUser() async throws{
@@ -25,5 +26,18 @@ class RegistrationViewModel:ObservableObject{
         password=""
         username=""
         name=""
+    }
+    
+    func resetPassword()async{
+        errorMessage = nil
+        do{
+            try await AuthService.shared.resetPassword(email: email)
+        }
+        catch{
+            errorMessage=error.localizedDescription
+            print("Error encountered while resetting password-\(error.localizedDescription)")
+           
+        }
+        
     }
 }

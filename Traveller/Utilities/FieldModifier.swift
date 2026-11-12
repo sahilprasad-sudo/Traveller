@@ -35,3 +35,39 @@ struct ButtonFieldModifier:ViewModifier{
             
     }
 }
+struct AlertItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}
+
+// MARK: - Alert ViewModifier
+struct AlertViewModifier: ViewModifier {
+    @Binding var alertItem: AlertItem?
+
+    func body(content: Content) -> some View {
+        content
+            .alert(
+                alertItem?.title ?? "",
+                isPresented: Binding(
+                    get: { alertItem != nil },
+                    set: { if !$0 { alertItem = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {
+                    alertItem = nil
+                }
+            } message: {
+                if let message = alertItem?.message {
+                    Text(message)
+                }
+            }
+    }
+}
+
+extension View {
+    func customAlert(item: Binding<AlertItem?>) -> some View {
+        self.modifier(AlertViewModifier(alertItem: item))
+    }
+}
+

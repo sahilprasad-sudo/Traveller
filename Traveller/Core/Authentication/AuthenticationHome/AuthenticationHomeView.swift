@@ -152,13 +152,9 @@ extension AuthenticationHomeView {
                 )
                 
                 // You can also swap this Button for a NavigationLink if you have a ForgotPasswordView
-                Button {
-                    Task{
-                        do{
-                            await viewModel.resetPassword()
-                        }
-                    }
-                    
+        
+                NavigationLink {
+                    ResetPasswordView()
                 } label: {
                     Text("Forgot Password?")
                         .font(.footnote.weight(.semibold))
