@@ -9,14 +9,22 @@ import SwiftUI
 
 struct SettingsView: View {
     
-    // Pass your real user & action handlers from your ViewModel when ready
     @State private var viewModel = SettingsViewModel()
     var user: User? = nil
     
     @State private var showSignOutAlert = false
     @State private var showDeleteAccountAlert = false
+    @State private var showEditProfileSheet = false
     @State private var notificationsEnabled = true
     @State private var autoCloudSync = true
+    
+    // Edit Profile form states
+    @State private var editName = ""
+    @State private var editUsername = ""
+    @State private var editEmail = ""
+    @State private var editBio = ""
+    @State private var isSavingProfile = false
+    @State private var saveErrorMessage: String?
     
     private var currentUser: User? {
         user ?? viewModel.currentUser
@@ -83,6 +91,9 @@ struct SettingsView: View {
             .task {
                 await viewModel.loadCurrentUser()
             }
+            .sheet(isPresented: $showEditProfileSheet) {
+                editProfileSheet
+            }
             .alert("Sign Out", isPresented: $showSignOutAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Sign Out", role: .destructive) {
@@ -94,16 +105,13 @@ struct SettingsView: View {
             .alert("Delete Account", isPresented: $showDeleteAccountAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Delete Permanently", role: .destructive) {
-                    Task{
-                        do{
+                    Task {
+                        do {
                             try await viewModel.deleteAccount()
+                        } catch {
+                            print("Error while deleting account: \(error.localizedDescription)")
                         }
-                        catch{
-                            print("Error while deleting account")
-                        }
-                        
                     }
-                    
                 }
             } message: {
                 Text("This will permanently delete your account, profile details, and synced expedition data. This action cannot be undone.")
@@ -139,6 +147,18 @@ struct SettingsView: View {
             }
             
             Spacer()
+            
+            Button {
+                prepareEditForm()
+                showEditProfileSheet = true
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.cyan)
+                    .frame(width: 34, height: 34)
+                    .background(Color.cyan.opacity(0.15))
+                    .clipShape(Circle())
+            }
         }
         .padding(16)
         .background(Color(red: 0.07, green: 0.09, blue: 0.12))
@@ -186,7 +206,18 @@ struct SettingsView: View {
     
     private var accountDetailsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("ACCOUNT DETAILS")
+            HStack {
+                sectionHeader("ACCOUNT DETAILS")
+                Spacer()
+                Button {
+                    prepareEditForm()
+                    showEditProfileSheet = true
+                } label: {
+                    Text("Edit")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.cyan)
+                }
+            }
             
             VStack(spacing: 0) {
                 detailRow(icon: "person.fill", title: "Full Name", value: displayName)
@@ -315,7 +346,181 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Edit Profile Sheet
+    
+    private var editProfileSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color(red: 0.03, green: 0.04, blue: 0.06)
+                    .ignoresSafeArea()
+                
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        editableField(
+                            title: "FULL NAME",
+                            icon: "person.fill",
+                            placeholder: "Enter your full name",
+                            text: $editName
+                        )
+                        
+                        editableField(
+                            title: "USERNAME",
+                            icon: "at",
+                            placeholder: "Enter username",
+                            text: $editUsername,
+                            autocapitalization: .never
+                        )
+                        
+                        editableField(
+                            title: "PRIMARY EMAIL",
+                            icon: "envelope.fill",
+                            placeholder: "Enter email address",
+                            text: $editEmail,
+                            keyboardType: .emailAddress,
+                            autocapitalization: .never
+                        )
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            sectionHeader("BIO")
+                            
+                            HStack(alignment: .top, spacing: 12) {
+                                iconBadge("text.quote", color: .cyan)
+                                    .padding(.top, 2)
+                                
+                                TextField("Tell others about yourself", text: $editBio, axis: .vertical)
+                                    .lineLimit(3...6)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(14)
+                            .background(Color(red: 0.07, green: 0.09, blue: 0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            )
+                        }
+                        
+                        if let saveErrorMessage {
+                            Text(saveErrorMessage)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 4)
+                        }
+                        
+                        Button {
+                            Task {
+                                await saveProfileChanges()
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                if isSavingProfile {
+                                    ProgressView()
+                                        .tint(.black)
+                                } else {
+                                    Image(systemName: "checkmark.circle.fill")
+                                    Text("Save Changes")
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.cyan)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                        .disabled(isSavingProfile)
+                        .padding(.top, 6)
+                    }
+                    .padding(16)
+                }
+            }
+            .navigationTitle("Edit Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .preferredColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        showEditProfileSheet = false
+                    }
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Edit Helpers
+    
+    private func prepareEditForm() {
+        editName = currentUser?.name ?? ""
+        editUsername = currentUser?.username ?? ""
+        editEmail = currentUser?.email ?? ""
+        editBio = currentUser?.bio ?? ""
+        saveErrorMessage = nil
+    }
+    
+    private func saveProfileChanges() async {
+        isSavingProfile = true
+        saveErrorMessage = nil
+        defer { isSavingProfile = false }
+        
+        let trimmedName = editName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedUsername = editUsername.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "@", with: "")
+        let trimmedEmail = editEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedBio = editBio.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let nameToUpdate = trimmedName != (currentUser?.name ?? "") ? trimmedName : nil
+        let usernameToUpdate = trimmedUsername != (currentUser?.username ?? "") ? trimmedUsername : nil
+        let emailToUpdate = trimmedEmail != (currentUser?.email ?? "") ? trimmedEmail : nil
+        let bioToUpdate = trimmedBio != (currentUser?.bio ?? "") ? trimmedBio : nil
+        
+        do {
+            try await viewModel.updateUserProfile(
+                updatedName: nameToUpdate,
+                updatedUsername: usernameToUpdate,
+                updatedBio: bioToUpdate,
+                updatedEmail: emailToUpdate
+            )
+            showEditProfileSheet = false
+        } catch {
+            saveErrorMessage = error.localizedDescription
+        }
+    }
+    
     // MARK: - Helper Views
+    
+    private func editableField(
+        title: String,
+        icon: String,
+        placeholder: String,
+        text: Binding<String>,
+        keyboardType: UIKeyboardType = .default,
+        autocapitalization: TextInputAutocapitalization = .words
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader(title)
+            
+            HStack(spacing: 12) {
+                iconBadge(icon, color: .cyan)
+                
+                TextField(placeholder, text: text)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .keyboardType(keyboardType)
+                    .textInputAutocapitalization(autocapitalization)
+                    .autocorrectionDisabled()
+            }
+            .padding(14)
+            .background(Color(red: 0.07, green: 0.09, blue: 0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
+        }
+    }
     
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
@@ -366,11 +571,11 @@ struct SettingsView: View {
     SettingsView(
         user: User(
             id: "uid_123456",
-            username: "sahilprasad",
+            username: "username",
             profileImageUrl: nil,
-            name: "Sahil Prasad",
+            name: "User",
             bio: "Explorer & Expedition Planner",
-            email: "sahil@traveller.app"
+            email: "you@email.com"
         )
     )
 }
