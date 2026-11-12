@@ -18,6 +18,13 @@ struct MainTabView: View {
                     Image(systemName: "suitcase.fill")
                     Text("Trips")
                 }
+                Tab{
+                    SettingsView()
+                }label:{
+                    Image(systemName: "gearshape.fill")
+                    Text("Settings")
+                }
+                
                 
                 
                 

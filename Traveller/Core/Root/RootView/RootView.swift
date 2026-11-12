@@ -18,7 +18,7 @@ struct RootView: View {
                     .environmentObject(registrationModel)
             }
             else if viewModel.currentUser != nil{
-                TripVaultView()
+                MainTabView()
                     .preferredColorScheme(.dark)
             }
                 
